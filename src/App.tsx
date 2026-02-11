@@ -1,44 +1,38 @@
 import { useEffect, useState } from 'react';
 import apiClient from './api/client';
 import type { Room } from './types';
+// Import the new component you just created
+import RoomCard from './components/RoomCard';
 
 function App() {
   const [rooms, setRooms] = useState<Room[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Attempting to fetch rooms from the Locus Backend
     apiClient.get('/rooms')
       .then((response) => {
         setRooms(response.data);
-        console.log('Connection Successful:', response.data);
+        setLoading(false);
       })
-      .catch((err) => {
-        setError(err.message);
-        console.error('Connection Failed:', err);
-      });
+      .catch(() => setLoading(false));
   }, []);
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
-      <h1>Locus System Connection Test</h1>
-      
-      {error ? (
-        <div style={{ color: 'red' }}>
-          <p>❌ Error connecting to backend: {error}</p>
-          <p>Check if your Backend is running and CORS is configured.</p>
-        </div>
-      ) : (
-        <div>
-          <p>✅ Backend connection status: {rooms.length >= 0 ? 'Connected' : 'Connecting...'}</p>
-          <h3>Available Rooms: {rooms.length}</h3>
-          <ul>
-            {rooms.map((room) => (
-              <li key={room.id}>{room.name} (Capacity: {room.capacity})</li>
-            ))}
-          </ul>
-        </div>
-      )}
+    <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto' }}>
+      <h1>Locus Dashboard</h1>
+      <p>Select an available room to start your booking request.</p>
+
+      {/* This creates the responsive grid for your cards */}
+      <div style={{ 
+        display: 'flex', 
+        flexWrap: 'wrap', 
+        gap: '20px',
+        marginTop: '20px'
+      }}>
+        {rooms.map((room) => (
+          <RoomCard key={room.id} room={room} />
+        ))}
+      </div>
     </div>
   );
 }
