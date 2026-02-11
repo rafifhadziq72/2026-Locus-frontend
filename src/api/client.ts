@@ -8,4 +8,13 @@ const apiClient = axios.create({
   },
 });
 
+// Add a request interceptor to automatically attach the JWT token
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('locus_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 export default apiClient;
