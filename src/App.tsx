@@ -1,35 +1,46 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from 'react';
+import apiClient from './api/client';
+import type { Room } from './types';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [rooms, setRooms] = useState<Room[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Attempting to fetch rooms from the Locus Backend
+    apiClient.get('/rooms')
+      .then((response) => {
+        setRooms(response.data);
+        console.log('Connection Successful:', response.data);
+      })
+      .catch((err) => {
+        setError(err.message);
+        console.error('Connection Failed:', err);
+      });
+  }, []);
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>
+      <h1>Locus System Connection Test</h1>
+      
+      {error ? (
+        <div style={{ color: 'red' }}>
+          <p>❌ Error connecting to backend: {error}</p>
+          <p>Check if your Backend is running and CORS is configured.</p>
+        </div>
+      ) : (
+        <div>
+          <p>✅ Backend connection status: {rooms.length >= 0 ? 'Connected' : 'Connecting...'}</p>
+          <h3>Available Rooms: {rooms.length}</h3>
+          <ul>
+            {rooms.map((room) => (
+              <li key={room.id}>{room.name} (Capacity: {room.capacity})</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
 }
 
-export default App
+export default App;
