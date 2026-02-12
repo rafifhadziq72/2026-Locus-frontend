@@ -1,20 +1,29 @@
 // src/types/index.ts
 
-export type BookingStatus = 'Pending' | 'Approved' | 'Rejected';
+export type BookingStatus = 'Pending' | 'Approved' | 'Rejected' | 'Cancelled';
 
 export interface Room {
-  id: string;
+  id: number; // Changed from string to number to match backend int
   name: string;
   capacity: number;
   isAvailable: boolean;
 }
 
+export interface CreateBookingRequest {
+  roomId: number;
+  bookerName: string;
+  bookerEmail: string;
+  startTime: string; // ISO string
+  endTime: string;
+}
+
 export interface Booking {
-  id: string;
-  roomId: string;
+  id: number;
+  roomId: number;
   room?: Room;
-  startTime: string; // ISO String from backend
+  startTime: string; 
   endTime: string;
   status: BookingStatus;
-  requesterName: string;
+  bookerName: string; // Aligned with backend BookerName
+  bookerEmail: string; // Added to match backend
 }
