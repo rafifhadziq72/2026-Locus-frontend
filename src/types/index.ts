@@ -13,18 +13,26 @@ export interface CreateBookingRequest {
   roomId: number;
   bookerName: string;
   bookerEmail: string;
-  startTime: string; 
+  startTime: string;
   endTime: string;
 }
 
 export interface Booking {
   id: number;
   roomId: number;
-  roomName: string;    
+  roomName: string;
   bookerName: string;
   bookerEmail: string; // Ensure this is present
-  startTime: string;   
-  endTime: string;     
+  startTime: string;
+  endTime: string;
   status: 'Pending' | 'Approved' | 'Rejected';
   rejectionReason?: string;
+}
+
+export interface Room {
+  id: number;
+  name: string;
+  capacity: number;
+  isAvailable: boolean;
+  facilities?: string; // Add this line to match Room.cs
 }
