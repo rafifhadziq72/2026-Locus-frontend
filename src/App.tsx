@@ -1,115 +1,133 @@
-// src/App.tsx
 import { useEffect, useState } from 'react';
 import apiClient from './api/client';
 import type { Room } from './types';
 import RoomCard from './components/RoomCard';
-import Login from './components/Login';
-import AdminDashboard from './components/AdminDashboard'; // Import the new component
+import AdminDashboard from './components/AdminDashboard';
+import './App.css';
 
 function App() {
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [filteredRooms, setFilteredRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('locus_token'));
-  
-  // New state to toggle between 'user' and 'admin' views for testing
   const [view, setView] = useState<'user' | 'admin'>('user');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [availabilityFilter, setAvailabilityFilter] = useState<'all' | 'available' | 'occupied'>('all');
 
   useEffect(() => {
-    if (token) {
-      setLoading(true);
-      apiClient.get('/rooms')
-        .then((response) => {
-          setRooms(response.data);
-          setLoading(false);
-        })
-        .catch(() => {
-          setLoading(false);
-          // If the token is invalid or expired, clear it
-          localStorage.removeItem('locus_token');
-          setToken(null);
-        });
-    }
-  }, [token]);
+    loadRooms();
+  }, []);
 
-  // If there is no token, stay on the Login page
-  if (!token) {
-    return <Login onLoginSuccess={(newToken) => setToken(newToken)} />;
-  }
+  useEffect(() => {
+    filterRooms();
+  }, [searchQuery, availabilityFilter, rooms]);
+
+  const loadRooms = async () => {
+    setLoading(true);
+    try {
+      const response = await apiClient.get('/rooms');
+      setRooms(response.data);
+    } catch (err) {
+      console.error("Failed to load rooms", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filterRooms = () => {
+    let filtered = rooms;
+
+    // Filter by search query
+    if (searchQuery) {
+      filtered = filtered.filter(room =>
+        room.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    // Filter by availability
+    if (availabilityFilter === 'available') {
+      filtered = filtered.filter(room => room.isAvailable);
+    } else if (availabilityFilter === 'occupied') {
+      filtered = filtered.filter(room => !room.isAvailable);
+    }
+
+    setFilteredRooms(filtered);
+  };
 
   return (
-    <div style={{ padding: '40px', maxWidth: '1200px', margin: '0 auto' }}>
-      <header style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        borderBottom: '1px solid #eee', 
-        paddingBottom: '20px', 
-        marginBottom: '20px' 
-      }}>
-        <div>
-          <h1 style={{ margin: 0 }}>Locus Dashboard</h1>
-          <div style={{ marginTop: '10px' }}>
-            <button 
+    <div className="app-container">
+      <header className="app-header">
+        <div className="header-content">
+          <div className="app-logo">
+            <div className="logo-icon">L</div>
+            <h1 className="app-title">Locus</h1>
+          </div>
+
+          <div className="view-tabs">
+            <button
+              className={`tab-btn ${view === 'user' ? 'active' : ''}`}
               onClick={() => setView('user')}
-              style={{ 
-                marginRight: '10px', 
-                padding: '8px 16px', 
-                cursor: 'pointer',
-                backgroundColor: view === 'user' ? '#3182ce' : '#edf2f7',
-                color: view === 'user' ? 'white' : 'black',
-                border: 'none',
-                borderRadius: '4px'
-              }}
             >
-              User View
+              🏢 Book a Room
             </button>
-            <button 
+            <button
+              className={`tab-btn ${view === 'admin' ? 'active' : ''}`}
               onClick={() => setView('admin')}
-              style={{ 
-                padding: '8px 16px', 
-                cursor: 'pointer',
-                backgroundColor: view === 'admin' ? '#3182ce' : '#edf2f7',
-                color: view === 'admin' ? 'white' : 'black',
-                border: 'none',
-                borderRadius: '4px'
-              }}
             >
-              Admin View
+              ✓ Manage Requests
             </button>
           </div>
         </div>
-        <button 
-           onClick={() => { localStorage.removeItem('locus_token'); setToken(null); }}
-           style={{ 
-             padding: '8px 16px', 
-             cursor: 'pointer', 
-             backgroundColor: 'transparent', 
-             border: '1px solid #e53e3e', 
-             color: '#e53e3e',
-             borderRadius: '4px'
-           }}
-        >
-          Logout
-        </button>
       </header>
 
-      {/* Conditionally render the selected view */}
-      {view === 'admin' ? (
-        <AdminDashboard />
-      ) : (
-        <>
-          <p>Select an available room to start your booking request.</p>
-          {loading ? (
-            <p>Loading secure data...</p>
-          ) : (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', marginTop: '20px' }}>
-              {rooms.map((room) => (
-                <RoomCard key={room.id} room={room} />
-              ))}
+      <main className="main-content">
+        {view === 'admin' ? (
+          <AdminDashboard />
+        ) : (
+          <>
+            <div className="search-section">
+              <div className="search-bar">
+                <div className="search-input-wrapper">
+                  <span className="search-icon">🔍</span>
+                  <input
+                    type="text"
+                    className="search-input"
+                    placeholder="Search rooms..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                </div>
+
+                <select
+                  className="filter-select"
+                  value={availabilityFilter}
+                  onChange={(e) => setAvailabilityFilter(e.target.value as any)}
+                >
+                  <option value="all">All Rooms</option>
+                  <option value="available">Available Only</option>
+                  <option value="occupied">Occupied Only</option>
+                </select>
+              </div>
             </div>
-          )}
-        </>
-      )}
+
+            {loading ? (
+              <div className="loading-container">
+                <div className="spinner loading-spinner"></div>
+                <p>Loading rooms...</p>
+              </div>
+            ) : filteredRooms.length === 0 ? (
+              <div className="empty-state">
+                <p>No rooms found matching your criteria</p>
+              </div>
+            ) : (
+              <div className="rooms-grid">
+                {filteredRooms.map((room) => (
+                  <RoomCard key={room.id} room={room} />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+      </main>
     </div>
   );
 }
